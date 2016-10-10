@@ -1,5 +1,7 @@
 package es.rubenjgarcia.commons.functional.tuple;
 
+import java.util.Objects;
+
 public class Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
     public final T1 _1;
     public final T2 _2;
@@ -28,5 +30,27 @@ public class Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
     @Override
     public String toString() {
         return "(" + _1 + ", " + _2 + ", " + _3 + ", " + _4 + ", " + _5 + ", " + _6 + ", " + _7 + ", " + _8 + ", " + _9 + ", " + _10 + ")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Tuple10<?, ?, ?, ?, ?, ?, ?, ?, ?, ?> tuple10 = (Tuple10<?, ?, ?, ?, ?, ?, ?, ?, ?, ?>) o;
+        return Objects.equals(_1, tuple10._1) &&
+                Objects.equals(_2, tuple10._2) &&
+                Objects.equals(_3, tuple10._3) &&
+                Objects.equals(_4, tuple10._4) &&
+                Objects.equals(_5, tuple10._5) &&
+                Objects.equals(_6, tuple10._6) &&
+                Objects.equals(_7, tuple10._7) &&
+                Objects.equals(_8, tuple10._8) &&
+                Objects.equals(_9, tuple10._9) &&
+                Objects.equals(_10, tuple10._10);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10);
     }
 }

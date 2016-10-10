@@ -13,6 +13,7 @@ public class TupleTestCase {
         Tuple1 t1 = tuple("1");
         assertEquals("1", t1._1);
         assertEquals("(1)", t1.toString());
+        assertEquals(tuple("1"), t1);
     }
 
     @Test
@@ -21,6 +22,7 @@ public class TupleTestCase {
         assertEquals("1", t2._1);
         assertEquals("2", t2._2);
         assertEquals("(1, 2)", t2.toString());
+        assertEquals(tuple("1", "2"), t2);
     }
 
     @Test
@@ -30,6 +32,7 @@ public class TupleTestCase {
         assertEquals("2", t3._2);
         assertEquals("3", t3._3);
         assertEquals("(1, 2, 3)", t3.toString());
+        assertEquals(tuple("1", "2", "3"), t3);
     }
 
     @Test
@@ -40,6 +43,7 @@ public class TupleTestCase {
         assertEquals("3", t4._3);
         assertEquals("4", t4._4);
         assertEquals("(1, 2, 3, 4)", t4.toString());
+        assertEquals(tuple("1", "2", "3", "4"), t4);
     }
 
     @Test
@@ -51,6 +55,7 @@ public class TupleTestCase {
         assertEquals("4", t5._4);
         assertEquals("5", t5._5);
         assertEquals("(1, 2, 3, 4, 5)", t5.toString());
+        assertEquals(tuple("1", "2", "3", "4", "5"), t5);
     }
 
     @Test
@@ -63,6 +68,7 @@ public class TupleTestCase {
         assertEquals("5", t6._5);
         assertEquals("6", t6._6);
         assertEquals("(1, 2, 3, 4, 5, 6)", t6.toString());
+        assertEquals(tuple("1", "2", "3", "4", "5", "6"), t6);
     }
 
     @Test
@@ -76,6 +82,7 @@ public class TupleTestCase {
         assertEquals("6", t7._6);
         assertEquals("7", t7._7);
         assertEquals("(1, 2, 3, 4, 5, 6, 7)", t7.toString());
+        assertEquals(tuple("1", "2", "3", "4", "5", "6", "7"), t7);
     }
 
     @Test
@@ -90,6 +97,7 @@ public class TupleTestCase {
         assertEquals("7", t8._7);
         assertEquals("8", t8._8);
         assertEquals("(1, 2, 3, 4, 5, 6, 7, 8)", t8.toString());
+        assertEquals(tuple("1", "2", "3", "4", "5", "6", "7", "8"), t8);
     }
 
     @Test
@@ -105,6 +113,7 @@ public class TupleTestCase {
         assertEquals("8", t9._8);
         assertEquals("9", t9._9);
         assertEquals("(1, 2, 3, 4, 5, 6, 7, 8, 9)", t9.toString());
+        assertEquals(tuple("1", "2", "3", "4", "5", "6", "7", "8", "9"), t9);
     }
 
     @Test
@@ -121,5 +130,6 @@ public class TupleTestCase {
         assertEquals("9", t10._9);
         assertEquals("10", t10._10);
         assertEquals("(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)", t10.toString());
+        assertEquals(tuple("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), t10);
     }
 }

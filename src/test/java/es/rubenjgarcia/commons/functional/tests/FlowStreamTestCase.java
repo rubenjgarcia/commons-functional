@@ -97,8 +97,6 @@ public class FlowStreamTestCase {
         assertEquals("elseIfAny condition size", 2, strings.size());
         assertEquals("elseIfAny condition equals", "A", strings.get(0));
         assertEquals("elseIfAny condition equals", "B", strings.get(1));
-
-
     }
 
     @Test
@@ -143,5 +141,17 @@ public class FlowStreamTestCase {
         assertEquals("else condition equals", "B", strings.get(1));
         assertEquals("else condition equals", "C", strings.get(2));
         assertEquals("else condition equals", "C", strings.get(3));
+
+        ints = Arrays.asList(1, 2, 2, 1);
+        strings = mapIf(ints, i -> i == 1, i -> "A")
+                .elseIfAnyMap(i -> i == 2, i -> "B")
+                .elseMap(i -> "C")
+                .collect(Collectors.toList());
+
+        assertEquals("else condition size", 4, strings.size());
+        assertEquals("else condition equals", "A", strings.get(0));
+        assertEquals("else condition equals", "B", strings.get(1));
+        assertEquals("else condition equals", "B", strings.get(2));
+        assertEquals("else condition equals", "A", strings.get(3));
     }
 }

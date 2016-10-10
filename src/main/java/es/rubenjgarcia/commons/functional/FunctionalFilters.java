@@ -27,7 +27,11 @@ public interface FunctionalFilters {
     }
 
     static <T> Predicate<T> noneOf(Predicate<T> p1, Predicate<T> p2) {
-        return p -> !(p1.test(p)) && !(p2.test(p));
+        return noneOf(Arrays.asList(p1, p2)); // TODO Generic array
+    }
+
+    static <T> Predicate<T> noneOf(Collection<Predicate<T>> ps) {
+        return p -> noneOf(ps.stream(), t -> t.test(p));
     }
 
     static <T> boolean anyOf(Stream<T> s, Predicate<T>... ps) {
