@@ -3,8 +3,10 @@ package es.rubenjgarcia.commons.functional;
 import es.rubenjgarcia.commons.functional.tuple.Tuple2;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -41,5 +43,13 @@ public interface StreamUtils {
         return (sa.isParallel() || sb.isParallel())
                 ? StreamSupport.stream(split, true)
                 : StreamSupport.stream(split, false);
+    }
+
+    static <A, B> Tuple2<Stream<A>, Stream<B>> unzip(Stream<Tuple2<A, B>> stream) {
+        List<Tuple2<A, B>> tuples = stream.collect(Collectors.toList());
+
+        Stream<A> aStream = tuples.stream().map(t -> t._1);
+        Stream<B> bStream = tuples.stream().map(t -> t._2);
+        return tuple(aStream, bStream);
     }
 }
