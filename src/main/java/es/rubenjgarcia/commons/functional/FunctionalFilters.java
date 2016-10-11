@@ -18,28 +18,20 @@ public interface FunctionalFilters {
         return p -> anyOf(ps.stream(), t -> t.test(p));
     }
 
+    static <T> boolean anyOf(Stream<T> s, Predicate<T>... ps) {
+        return anyOf(s, Arrays.asList(ps));
+    }
+
+    static <T> boolean anyOf(Stream<T> s, Collection<Predicate<T>> ps) {
+        return s.anyMatch(t -> ps.stream().anyMatch(p -> p.test(t)));
+    }
+
     static <T> Predicate<T> allOf(Predicate<T> p1, Predicate<T> p2) {
         return allOf(Arrays.asList(p1, p2)); // TODO Generic array
     }
 
     static <T> Predicate<T> allOf(Collection<Predicate<T>> ps) {
         return p -> allOf(ps.stream(), t -> t.test(p));
-    }
-
-    static <T> Predicate<T> noneOf(Predicate<T> p1, Predicate<T> p2) {
-        return noneOf(Arrays.asList(p1, p2)); // TODO Generic array
-    }
-
-    static <T> Predicate<T> noneOf(Collection<Predicate<T>> ps) {
-        return p -> noneOf(ps.stream(), t -> t.test(p));
-    }
-
-    static <T> boolean anyOf(Stream<T> s, Predicate<T>... ps) {
-        return anyOf(s, Arrays.asList(ps));
-    }
-    
-    static <T> boolean anyOf(Stream<T> s, Collection<Predicate<T>> ps) {
-        return s.anyMatch(t -> ps.stream().anyMatch(p -> p.test(t)));
     }
 
     static <T> boolean allOf(Stream<T> s, Predicate<T>... ps) {
@@ -50,10 +42,18 @@ public interface FunctionalFilters {
         return s.allMatch(t -> ps.stream().allMatch(p -> p.test(t)));
     }
 
+    static <T> Predicate<T> noneOf(Predicate<T> p1, Predicate<T> p2) {
+        return noneOf(Arrays.asList(p1, p2)); // TODO Generic array
+    }
+
+    static <T> Predicate<T> noneOf(Collection<Predicate<T>> ps) {
+        return p -> noneOf(ps.stream(), t -> t.test(p));
+    }
+
     static <T> boolean noneOf(Stream<T> s, Predicate<T>... ps) {
         return noneOf(s, Arrays.asList(ps));
     }
-    
+
     static <T> boolean noneOf(Stream<T> s, Collection<Predicate<T>> ps) {
         return s.noneMatch(t -> ps.stream().anyMatch(p -> p.test(t)));
     }
@@ -66,12 +66,12 @@ public interface FunctionalFilters {
         return ps.stream().filter(p -> p.test(o)).findFirst();
     }
 
-    static <T> Optional<T> findFirstNotMatch(Stream<T> s, Predicate<T> p) {
-        return s.filter(t -> !p.test(t)).findFirst();
-    }
-
     static <T> Optional<T> findLast(Stream<T> s, Predicate<T> p) {
         List<T> collect = s.filter(p).collect(Collectors.toList());
         return collect.isEmpty() ? Optional.empty() : Optional.of(collect.get(collect.size() - 1));
+    }
+
+    static <T> Optional<T> findFirstNotMatch(Stream<T> s, Predicate<T> p) {
+        return s.filter(t -> !p.test(t)).findFirst();
     }
 }
