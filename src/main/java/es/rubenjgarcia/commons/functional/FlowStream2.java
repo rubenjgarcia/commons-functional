@@ -12,22 +12,22 @@ public class FlowStream2<F, T> implements Stream<T> {
     private final List<Predicate<F>> predicates;
     private final Stream<Tuple2<F, T>> zip;
     private final Supplier<Stream<T>> stream;
+    private boolean anyMatch = false;
 
     private FlowStream2(Supplier<Stream<F>> supplier, Stream<T> result, Predicate<F> predicate) {
-        this(supplier, result, new ArrayList<>());
-        this.predicates.add(predicate);
-    }
-
-    private FlowStream2(Supplier<Stream<F>> supplier, Stream<T> result, List<Predicate<F>> predicates) {
         this.supplier = supplier;
         this.zip = StreamUtils.zip(supplier.get(), result);
         this.stream = () -> zip.map(t -> t._2);
-        this.predicates = predicates;
+        this.predicates = new ArrayList<>();
+        this.predicates.add(predicate);
     }
 
-    private FlowStream2(Supplier<Stream<F>> supplier, Stream<T> result, List<Predicate<F>> predicates, Predicate<F> predicate) {
-        this(supplier, result, new ArrayList<>(predicates));
-        this.predicates.add(predicate);
+    private FlowStream2(Supplier<Stream<F>> supplier, Stream<T> result, List<Predicate<F>> predicates, Predicate<F> p) {
+        this.supplier = supplier;
+        this.zip = StreamUtils.zip(supplier.get(), result);
+        this.stream = () -> zip.map(t -> t._2);
+        this.predicates = new ArrayList<>(predicates);
+        this.predicates.add(p);
     }
 
     public static <F, T> FlowStream2<F, Object> mapIf(Supplier<Stream<F>> s, Predicate<F> p, Function<F, T> mapper) {
@@ -41,7 +41,27 @@ public class FlowStream2<F, T> implements Stream<T> {
     }
 
     public Stream<T> elseMap(Function<F, T> mapper) {
+        if (this.anyMatch) {
+            return this;
+        }
+
         return this.zip.map(t -> FunctionalFilters.noneOf(this.predicates).test(t._1) ? mapper.apply(t._1) : t._2);
+    }
+
+    public static <F, T> FlowStream2<F, Object> mapIfAny(Supplier<Stream<F>> s, Predicate<F> p, Function<F, T> mapper) {
+        boolean anyMatch = s.get().anyMatch(p);
+        Stream<Object> result = anyMatch ? s.get().map(mapper) : (Stream<Object>) s.get();
+        FlowStream2 fStream = new FlowStream2(s, result, p);
+        fStream.anyMatch = anyMatch;
+        return fStream;
+    }
+
+    public FlowStream2<F, Object> elseIfAnyMap(Predicate<F> p, Function<F, T> mapper) {
+        if (this.anyMatch) {
+            return (FlowStream2<F, Object>) this;
+        }
+
+        return mapIfAny(this.supplier, p, mapper);
     }
 
     @Override
