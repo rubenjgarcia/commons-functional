@@ -6,294 +6,265 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
-import static es.rubenjgarcia.commons.functional.tuple.Tuple.tuple;
+public class FlowStream<F, T> implements Stream<T> {
 
-public class FlowStream<S, C> implements Stream<S> {
+    private final Supplier<Stream<F>> supplier;
+    private final List<Predicate<F>> predicates;
+    private final Stream<Tuple2<F, T>> zip;
+    private final Supplier<Stream<T>> stream;
+    private boolean anyMatch = false;
 
-    private final Stream<S> s;
-    private Collection<C> c;
-    private boolean allMatch;
-    private boolean all;
-    private List<Tuple2<Predicate<C>, Function<C, S>>> predicateFunctions;
-
-    private FlowStream(Stream<S> s, Collection<C> c, boolean all, Predicate<C> p, Function<C, S> f) {
-        this.s = s;
-        this.c = c;
-        this.all = all;
-        this.predicateFunctions = Collections.singletonList(tuple(p, f));
+    private FlowStream(Supplier<Stream<F>> supplier, Stream<T> result, Predicate<F> predicate) {
+        this.supplier = supplier;
+        this.zip = StreamUtils.zip(supplier.get(), result);
+        this.stream = () -> zip.map(t -> t._2);
+        this.predicates = new ArrayList<>();
+        this.predicates.add(predicate);
     }
 
-    private FlowStream(Stream<S> s, Collection<C> c, boolean all, List<Tuple2<Predicate<C>, Function<C, S>>> predicateFunctions) {
-        this.s = s;
-        this.c = c;
-        this.all = all;
-        this.predicateFunctions = predicateFunctions;
+    private FlowStream(Supplier<Stream<F>> supplier, Stream<T> result, List<Predicate<F>> predicates, Predicate<F> p) {
+        this.supplier = supplier;
+        this.zip = StreamUtils.zip(supplier.get(), result);
+        this.stream = () -> zip.map(t -> t._2);
+        this.predicates = new ArrayList<>(predicates);
+        this.predicates.add(p);
     }
 
-    public static <C, S> FlowStream<S, C> mapIf(Collection<C> c, Predicate<C> p, Function<C, S> mapper) {
-        return getScFlowStream(c, p, mapper, true);
+    public static <F, T> FlowStream<F, Object> mapIf(Supplier<Stream<F>> s, Predicate<F> p, Function<F, T> mapper) {
+        Stream<Object> result = s.get().map(e -> p.test(e) ? mapper.apply(e) : e);
+        return new FlowStream(s, result, p);
     }
 
-    public static <C, S> FlowStream<S, C> mapIfAny(Collection<C> c, Predicate<C> p, Function<C, S> mapper) {
-        return getScFlowStream(c, p, mapper, false);
+    public FlowStream<F, Object> elseIfMap(Predicate<F> p, Function<F, T> mapper) {
+        Stream<Object> result = this.zip.map(t -> FunctionalFilters.noneOf(this.predicates).test(t._1) ? (p.test(t._1) ? mapper.apply(t._1) : t._2) : t._2);
+        return new FlowStream(this.supplier, result, this.predicates, p);
     }
 
-    private static <C, S> FlowStream<S, C> getScFlowStream(Collection<C> c, Predicate<C> p, Function<C, S> mapper, boolean all) {
-        if (all && c.stream().allMatch(p)) {
-            FlowStream<S, C> rFlowStream = new FlowStream<>(c.stream().filter(p).map(mapper), c, all, p, mapper);
-            rFlowStream.allMatch = true;
-            return rFlowStream;
-        } else if (!all) {
-            return new FlowStream<>(c.stream().filter(p).map(mapper), c, all, p, mapper);
-        } else {
-            return new FlowStream<>(Stream.empty(), c, all, p, mapper);
-        }
-    }
-
-    public FlowStream<S, C> elseIfMap(Predicate<C> p, Function<C, S> mapper) {
-        if (allMatch) {
+    public Stream<T> elseMap(Function<F, T> mapper) {
+        if (this.anyMatch) {
             return this;
         }
 
-        return getScFlowStream(this.c, p, mapper, true);
+        return this.zip.map(t -> FunctionalFilters.noneOf(this.predicates).test(t._1) ? mapper.apply(t._1) : t._2);
     }
 
-    public FlowStream<S, C> elseIfAnyMap(Predicate<C> p, Function<C, S> mapper) {
-        if (allMatch) {
-            return this;
+    public static <F, T> FlowStream<F, Object> mapIfAny(Supplier<Stream<F>> s, Predicate<F> p, Function<F, T> mapper) {
+        boolean anyMatch = s.get().anyMatch(p);
+        Stream<Object> result = anyMatch ? s.get().map(mapper) : (Stream<Object>) s.get();
+        FlowStream fStream = new FlowStream(s, result, p);
+        fStream.anyMatch = anyMatch;
+        return fStream;
+    }
+
+    public FlowStream<F, Object> elseIfAnyMap(Predicate<F> p, Function<F, T> mapper) {
+        if (this.anyMatch) {
+            return (FlowStream<F, Object>) this;
         }
 
-        if (all) {
-            return new FlowStream<>(Stream.concat(this.s, getScFlowStream(this.c, p, mapper, false).s), this.c, false, p, mapper);
-        } else {
-            Stream<S> sStream = this.c.stream().map(o -> FunctionalFilters.findFirst(predicateFunctions.stream(), pf -> pf._1.test(o))
-                    .map(pf -> pf._2.apply(o))
-                    .orElseGet(() -> {
-                        if (p.test(o)) {
-                            return mapper.apply(o);
-                        } else {
-                            return null;
-                        }
-                    })).filter(o -> o != null);
-
-            List<Tuple2<Predicate<C>, Function<C, S>>> predicateFunctions = new ArrayList<>(this.predicateFunctions);
-            predicateFunctions.add(tuple(p, mapper));
-            return new FlowStream<>(sStream, this.c, false, predicateFunctions);
-        }
-    }
-
-    public Stream<S> elseMap(Function<C, S> mapper) {
-        if (allMatch) {
-            return this.s;
-        }
-
-        if (all) {
-            return this.c.stream().map(mapper);
-        } else {
-            return this.c.stream()
-                    .map(o -> FunctionalFilters.findFirst(predicateFunctions.stream(), pf -> pf._1.test(o))
-                    .map(pf -> pf._2.apply(o))
-                    .orElseGet(() -> mapper.apply(o)));
-        }
+        boolean anyMatch = this.supplier.get().anyMatch(p);
+        Stream<Object> result = this.zip.map(t -> FunctionalFilters.noneOf(this.predicates).test(t._1) ? (anyMatch ? mapper.apply(t._1) : t._2) : t._2);
+        FlowStream fStream = new FlowStream(this.supplier, result, p);
+        fStream.anyMatch = anyMatch;
+        return fStream;
     }
 
     @Override
-    public Stream<S> filter(Predicate<? super S> predicate) {
-        return s.filter(predicate);
+    public Stream<T> filter(Predicate<? super T> predicate) {
+        return stream.get().filter(predicate);
     }
 
     @Override
-    public <R> Stream<R> map(Function<? super S, ? extends R> mapper) {
-        return s.map(mapper);
+    public <R> Stream<R> map(Function<? super T, ? extends R> mapper) {
+        return stream.get().map(mapper);
     }
 
     @Override
-    public IntStream mapToInt(ToIntFunction<? super S> mapper) {
-        return s.mapToInt(mapper);
+    public IntStream mapToInt(ToIntFunction<? super T> mapper) {
+        return stream.get().mapToInt(mapper);
     }
 
     @Override
-    public LongStream mapToLong(ToLongFunction<? super S> mapper) {
-        return s.mapToLong(mapper);
+    public LongStream mapToLong(ToLongFunction<? super T> mapper) {
+        return stream.get().mapToLong(mapper);
     }
 
     @Override
-    public DoubleStream mapToDouble(ToDoubleFunction<? super S> mapper) {
-        return s.mapToDouble(mapper);
+    public DoubleStream mapToDouble(ToDoubleFunction<? super T> mapper) {
+        return stream.get().mapToDouble(mapper);
     }
 
     @Override
-    public <R> Stream<R> flatMap(Function<? super S, ? extends Stream<? extends R>> mapper) {
-        return s.flatMap(mapper);
+    public <R> Stream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
+        return stream.get().flatMap(mapper);
     }
 
     @Override
-    public IntStream flatMapToInt(Function<? super S, ? extends IntStream> mapper) {
-        return s.flatMapToInt(mapper);
+    public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
+        return stream.get().flatMapToInt(mapper);
     }
 
     @Override
-    public LongStream flatMapToLong(Function<? super S, ? extends LongStream> mapper) {
-        return s.flatMapToLong(mapper);
+    public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
+        return stream.get().flatMapToLong(mapper);
     }
 
     @Override
-    public DoubleStream flatMapToDouble(Function<? super S, ? extends DoubleStream> mapper) {
-        return s.flatMapToDouble(mapper);
+    public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
+        return stream.get().flatMapToDouble(mapper);
     }
 
     @Override
-    public Stream<S> distinct() {
-        return s.distinct();
+    public Stream<T> distinct() {
+        return stream.get().distinct();
     }
 
     @Override
-    public Stream<S> sorted() {
-        return s.sorted();
+    public Stream<T> sorted() {
+        return stream.get().sorted();
     }
 
     @Override
-    public Stream<S> sorted(Comparator<? super S> comparator) {
-        return s.sorted(comparator);
+    public Stream<T> sorted(Comparator<? super T> comparator) {
+        return stream.get().sorted(comparator);
     }
 
     @Override
-    public Stream<S> peek(Consumer<? super S> action) {
-        return s.peek(action);
+    public Stream<T> peek(Consumer<? super T> action) {
+        return stream.get().peek(action);
     }
 
     @Override
-    public Stream<S> limit(long maxSize) {
-        return s.limit(maxSize);
+    public Stream<T> limit(long maxSize) {
+        return stream.get().limit(maxSize);
     }
 
     @Override
-    public Stream<S> skip(long n) {
-        return s.skip(n);
+    public Stream<T> skip(long n) {
+        return stream.get().skip(n);
     }
 
     @Override
-    public void forEach(Consumer<? super S> action) {
-        s.forEach(action);
+    public void forEach(Consumer<? super T> action) {
+        stream.get().forEach(action);
     }
 
     @Override
-    public void forEachOrdered(Consumer<? super S> action) {
-        s.forEachOrdered(action);
+    public void forEachOrdered(Consumer<? super T> action) {
+        stream.get().forEachOrdered(action);
     }
 
     @Override
     public Object[] toArray() {
-        return s.toArray();
+        return stream.get().toArray();
     }
 
     @Override
     public <A> A[] toArray(IntFunction<A[]> generator) {
-        return s.toArray(generator);
+        return stream.get().toArray(generator);
     }
 
     @Override
-    public S reduce(S identity, BinaryOperator<S> accumulator) {
-        return s.reduce(identity, accumulator);
+    public T reduce(T identity, BinaryOperator<T> accumulator) {
+        return stream.get().reduce(identity, accumulator);
     }
 
     @Override
-    public Optional<S> reduce(BinaryOperator<S> accumulator) {
-        return s.reduce(accumulator);
+    public Optional<T> reduce(BinaryOperator<T> accumulator) {
+        return stream.get().reduce(accumulator);
     }
 
     @Override
-    public <U> U reduce(U identity, BiFunction<U, ? super S, U> accumulator, BinaryOperator<U> combiner) {
-        return s.reduce(identity, accumulator, combiner);
+    public <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner) {
+        return stream.get().reduce(identity, accumulator, combiner);
     }
 
     @Override
-    public <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super S> accumulator, BiConsumer<R, R> combiner) {
-        return s.collect(supplier, accumulator, combiner);
+    public <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
+        return stream.get().collect(supplier, accumulator, combiner);
     }
 
     @Override
-    public <R, A> R collect(Collector<? super S, A, R> collector) {
-        return s.collect(collector);
+    public <R, A> R collect(Collector<? super T, A, R> collector) {
+        return stream.get().collect(collector);
     }
 
     @Override
-    public Optional<S> min(Comparator<? super S> comparator) {
-        return s.min(comparator);
+    public Optional<T> min(Comparator<? super T> comparator) {
+        return stream.get().min(comparator);
     }
 
     @Override
-    public Optional<S> max(Comparator<? super S> comparator) {
-        return s.max(comparator);
+    public Optional<T> max(Comparator<? super T> comparator) {
+        return stream.get().max(comparator);
     }
 
     @Override
     public long count() {
-        return s.count();
+        return stream.get().count();
     }
 
     @Override
-    public boolean anyMatch(Predicate<? super S> predicate) {
-        return s.anyMatch(predicate);
+    public boolean anyMatch(Predicate<? super T> predicate) {
+        return stream.get().anyMatch(predicate);
     }
 
     @Override
-    public boolean allMatch(Predicate<? super S> predicate) {
-        return s.allMatch(predicate);
+    public boolean allMatch(Predicate<? super T> predicate) {
+        return stream.get().allMatch(predicate);
     }
 
     @Override
-    public boolean noneMatch(Predicate<? super S> predicate) {
-        return s.noneMatch(predicate);
+    public boolean noneMatch(Predicate<? super T> predicate) {
+        return stream.get().noneMatch(predicate);
     }
 
     @Override
-    public Optional<S> findFirst() {
-        return s.findFirst();
+    public Optional<T> findFirst() {
+        return stream.get().findFirst();
     }
 
     @Override
-    public Optional<S> findAny() {
-        return s.findAny();
+    public Optional<T> findAny() {
+        return stream.get().findAny();
     }
 
     @Override
-    public Iterator<S> iterator() {
-        return s.iterator();
+    public Iterator<T> iterator() {
+        return stream.get().iterator();
     }
 
     @Override
-    public Spliterator<S> spliterator() {
-        return s.spliterator();
+    public Spliterator<T> spliterator() {
+        return stream.get().spliterator();
     }
 
     @Override
     public boolean isParallel() {
-        return s.isParallel();
+        return stream.get().isParallel();
     }
 
     @Override
-    public Stream<S> sequential() {
-        return s.sequential();
+    public Stream<T> sequential() {
+        return stream.get().sequential();
     }
 
     @Override
-    public Stream<S> parallel() {
-        return s.parallel();
+    public Stream<T> parallel() {
+        return stream.get().parallel();
     }
 
     @Override
-    public Stream<S> unordered() {
-        return s.unordered();
+    public Stream<T> unordered() {
+        return stream.get().unordered();
     }
 
     @Override
-    public Stream<S> onClose(Runnable closeHandler) {
-        return s.onClose(closeHandler);
+    public Stream<T> onClose(Runnable closeHandler) {
+        return stream.get().onClose(closeHandler);
     }
 
     @Override
     public void close() {
-        s.close();
+        stream.get().close();
     }
 }
