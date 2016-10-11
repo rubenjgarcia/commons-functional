@@ -56,6 +56,11 @@ public class FunctionalFiltersTestCase {
 
         anyMatch = Stream.of(1).anyMatch(noneOf(n -> n == 3, n -> n == 4));
         assertTrue(anyMatch);
+
+        Predicate<Integer> p = noneOf(n -> n == 1, n -> n == 2);
+        assertFalse(p.test(1));
+        assertFalse(p.test(2));
+        assertTrue(p.test(3));
     }
 
     @Test

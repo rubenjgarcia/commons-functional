@@ -1,27 +1,20 @@
 package es.rubenjgarcia.commons.functional;
 
 import es.rubenjgarcia.commons.functional.tuple.Tuple2;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
-import static es.rubenjgarcia.commons.functional.StreamUtils.unzip;
-import static es.rubenjgarcia.commons.functional.StreamUtils.zip;
-
 public class FlowStream2<F, T> implements Stream<T> {
-    
+
     private final Supplier<Stream<F>> supplier;
     private final List<Predicate<F>> predicates;
     private final Stream<Tuple2<F, T>> zip;
     private final Supplier<Stream<T>> stream;
 
     private FlowStream2(Supplier<Stream<F>> supplier, Stream<T> result, Predicate<F> predicate) {
-        this.supplier = supplier;
-        this.zip = StreamUtils.zip(supplier.get(), result);
-        this.stream = () -> zip.map(t -> t._2);
-        this.predicates = new ArrayList<>();
+        this(supplier, result, new ArrayList<>());
         this.predicates.add(predicate);
     }
 
@@ -32,19 +25,23 @@ public class FlowStream2<F, T> implements Stream<T> {
         this.predicates = predicates;
     }
 
+    private FlowStream2(Supplier<Stream<F>> supplier, Stream<T> result, List<Predicate<F>> predicates, Predicate<F> predicate) {
+        this(supplier, result, new ArrayList<>(predicates));
+        this.predicates.add(predicate);
+    }
+
     public static <F, T> FlowStream2<F, Object> mapIf(Supplier<Stream<F>> s, Predicate<F> p, Function<F, T> mapper) {
         Stream<Object> result = s.get().map(e -> p.test(e) ? mapper.apply(e) : e);
         return new FlowStream2(s, result, p);
     }
 
     public FlowStream2<F, Object> elseIfMap(Predicate<F> p, Function<F, T> mapper) {
-        Stream<Object> result = this.zip.map(t -> FunctionalFilters.noneOf(this.predicates).test(t._1) ? mapper.apply(t._1) : t._2);
-        this.predicates.add(p);
-        return new FlowStream2(this.supplier, result, this.predicates);
+        Stream<Object> result = this.zip.map(t -> FunctionalFilters.noneOf(this.predicates).test(t._1) ? (p.test(t._1) ? mapper.apply(t._1) : t._2) : t._2);
+        return new FlowStream2(this.supplier, result, this.predicates, p);
     }
 
     public Stream<T> elseMap(Function<F, T> mapper) {
-        throw new NotImplementedException();
+        return this.zip.map(t -> FunctionalFilters.noneOf(this.predicates).test(t._1) ? mapper.apply(t._1) : t._2);
     }
 
     @Override
