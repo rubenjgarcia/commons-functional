@@ -2,6 +2,8 @@ package es.rubenjgarcia.commons.functional.tests;
 
 import org.junit.Test;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.stream.Stream;
 
 import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowConsumer;
@@ -9,26 +11,27 @@ import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowFun
 import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowPredicate;
 import static es.rubenjgarcia.commons.functional.tests.TestHelper.assertThrows;
 
+@SuppressWarnings("InjectedReferences")
 public class FunctionalExceptionsTestCase {
 
     @Test
     public void testRethrowFunction() {
-        assertThrows(NullPointerException.class, () -> {
-            Stream.of(null, 1).map(rethrowFunction(Object::toString)).findFirst();
+        assertThrows(UnsupportedEncodingException.class, () -> {
+            Stream.of("a", "b").map(rethrowFunction(s -> new String(s.getBytes(), "Foo"))).findFirst();
         });
     }
 
     @Test
     public void testRethrowConsumer() {
-        assertThrows(NullPointerException.class, () -> {
-            Stream.of(null, 1).forEach(rethrowConsumer(Object::toString));
+        assertThrows(UnsupportedEncodingException.class, () -> {
+            Stream.of("a", "b").forEach(rethrowConsumer(s -> new String(s.getBytes(), "Foo")));
         });
     }
 
     @Test
     public void testRethrowPredicate() {
-        assertThrows(NullPointerException.class, () -> {
-            Stream.of(null, 1).filter(rethrowPredicate(p -> p.toString() == null)).count();
+        assertThrows(UnsupportedEncodingException.class, () -> {
+            Stream.of("a", "b").filter(rethrowPredicate(p -> new String(p.getBytes(), "Foo") == null)).count();
         });
     }
 }

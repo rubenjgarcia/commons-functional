@@ -23,7 +23,6 @@ public class StreamUtilsTestCase {
 
             List<Tuple2<Integer, String>> tuples = zip(ints.stream(), strings.stream()).collect(Collectors.toList());
             assertEquals(3, tuples.size());
-            System.out.println(tuples);
             assertEquals(tuple(1, "1"), tuples.get(0));
             assertEquals(tuple(2, "2"), tuples.get(1));
             assertEquals(tuple(3, "3"), tuples.get(2));
