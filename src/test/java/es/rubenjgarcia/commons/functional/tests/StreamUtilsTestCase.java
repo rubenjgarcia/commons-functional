@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import static es.rubenjgarcia.commons.functional.StreamUtils.unzip;
 import static es.rubenjgarcia.commons.functional.StreamUtils.zip;
+import static es.rubenjgarcia.commons.functional.StreamUtils.zipWithIndex;
 import static es.rubenjgarcia.commons.functional.tuple.Tuple.tuple;
 import static org.junit.Assert.assertEquals;
 
@@ -105,6 +106,19 @@ public class StreamUtilsTestCase {
             assertEquals(2, stringsUnzip.size());
             assertEquals("1", stringsUnzip.get(0));
             assertEquals("2", stringsUnzip.get(1));
+        }
+    }
+
+    @Test
+    public void testZipWithIndex() {
+        {
+            List<String> strings = Arrays.asList("1", "2", "3");
+
+            List<Tuple2<Long, String>> tuples = zipWithIndex(strings.stream()).collect(Collectors.toList());
+            assertEquals(3, tuples.size());
+            assertEquals(tuple(0L, "1"), tuples.get(0));
+            assertEquals(tuple(1L, "2"), tuples.get(1));
+            assertEquals(tuple(2L, "3"), tuples.get(2));
         }
     }
 }

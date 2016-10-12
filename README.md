@@ -31,6 +31,15 @@ List<Tuple2<Integer, String>> tuples = zip(ints.stream(), strings.stream()).coll
 tuples.toString(); // [(1, a), (2, b), (3, c)]
 ```
 
+### zipWithIndex
+
+```
+import static es.rubenjgarcia.commons.functional.StreamUtils.zipWithIndex;
+
+List<String> strings = Arrays.asList("1", "2", "3");
+List<Tuple2<Long, String>> tuples = zipWithIndex(strings.stream()).collect(Collectors.toList());
+```
+
 ### unzip
 
 Converts a collection of [Tuple2](src/main/java/es/rubenjgarcia/commons/functional/tuple/Tuple2.java) into a [Tuple2](src/main/java/es/rubenjgarcia/commons/functional/tuple/Tuple2.java) of stream of the first and second half of each pair
@@ -51,6 +60,8 @@ List<String> strings = tupleStream._2.collect(Collectors.toList());
 Return if the value matches any predicate
 
 ```
+import static es.rubenjgarcia.commons.functional.FunctionalFilters.anyOf;
+
 Predicate<Integer> p = anyOf(n -> n == 1, n -> n == 2);
 p.test(1); // true
 p.test(3); // false
@@ -61,6 +72,8 @@ p.test(3); // false
 Return if the value doesn't match any of the predicates
 
 ```
+import static es.rubenjgarcia.commons.functional.FunctionalFilters.noneOf;
+
 Predicate<Integer> p = noneOf(n -> n == 1, n -> n == 2);
 p.test(1); // false
 p.test(3); // true
@@ -71,6 +84,8 @@ p.test(3); // true
 Return if the value matches all the predicates
 
 ```
+import static es.rubenjgarcia.commons.functional.FunctionalFilters.allOf;
+
 Predicate<Integer> p = allOf(n -> n > 1, n -> n < 3);
 p.test(1); // false
 p.test(2); // true
@@ -81,6 +96,8 @@ p.test(2); // true
 Find the first element that matchs the predicate
 
 ```
+import static es.rubenjgarcia.commons.functional.FunctionalFilters.findFirst;
+
 Optional<Integer> found = findFirst(Stream.of(1, 2), n -> n == 1);
 found.isPresent(); // true
 found.get(); 1
@@ -91,6 +108,8 @@ found.get(); 1
 Finds the last element that matchs the predicate
 
 ```
+import static es.rubenjgarcia.commons.functional.FunctionalFilters.findLast;
+
 Optional<Integer> last = findLast(Stream.of(1, 2, 3), p -> p > 1 && p <= 2);
 last.isPresent(); // true
 last.get(); // 2
@@ -101,6 +120,8 @@ last.get(); // 2
 Finds first element that doesn't match the predicate
 
 ```
+import static es.rubenjgarcia.commons.functional.FunctionalFilters.findFirstNotMatch;
+
 Optional<Integer> found = findFirstNotMatch(Stream.of(1, 2), n -> n == 1);
 found.isPresent(); // true
 found.get(); // 2
@@ -113,6 +134,8 @@ found.get(); // 2
 Apply a map function to the element of a stream if the element matches the predicate
 
 ```
+import static es.rubenjgarcia.commons.functional.FlowStream.mapIf;
+
 List<Integer> list = Arrays.asList(1, 1, 1, 1);
 List<Object> result = mapIf(list::stream, i -> i == 1, i -> "A")
         .collect(Collectors.toList()); // [A, A, A, A]
@@ -129,6 +152,8 @@ List<Object> result = mapIf(list::stream, i -> i == 1, i -> "A")
 Apply a map function to the element of a stream if the element matches the predicate after a mapIf code
 
 ```
+import static es.rubenjgarcia.commons.functional.FlowStream.mapIf;
+
 List<Integer> list = Arrays.asList(1, 2, 3, 1);
 List<Object> result = mapIf(list::stream, i -> i == 1, i -> "A")
         .elseIfMap(i -> i == 2, i -> "B")
@@ -136,6 +161,8 @@ List<Object> result = mapIf(list::stream, i -> i == 1, i -> "A")
 ```
 
 ```
+import static es.rubenjgarcia.commons.functional.FlowStream.mapIf;
+
 List<Integer> list = Arrays.asList(1, 2, 3, 1);
 List<Object> result = mapIf(list::stream, i -> i == 1, i -> "A")
         .elseIfMap(i -> i == 2, i -> "B")
@@ -148,6 +175,8 @@ List<Object> result = mapIf(list::stream, i -> i == 1, i -> "A")
 Apply a map function to the elements of a stream that don't match any of the other if or elseif predicates
 
 ```
+import static es.rubenjgarcia.commons.functional.FlowStream.mapIf;
+
 List<Integer> list = Arrays.asList(1, 2, 3, 1);
 List<Object> result = mapIf(list::stream, i -> i == 1, i -> "A")
         .elseIfMap(i -> i == 2, i -> "B")
@@ -156,6 +185,8 @@ List<Object> result = mapIf(list::stream, i -> i == 1, i -> "A")
 ```
 
 ```
+import static es.rubenjgarcia.commons.functional.FlowStream.mapIf;
+
 List<Integer> list = Arrays.asList(1, 2, 3, 1);
 List<Object> result = mapIf(list::stream, i -> i == 1, i -> "A")
         .elseMap(i -> "C")
@@ -167,6 +198,8 @@ List<Object> result = mapIf(list::stream, i -> i == 1, i -> "A")
 Apply a map function to all the elements of the stream if any of them match the predicate
 
 ```
+import static es.rubenjgarcia.commons.functional.FlowStream.mapIfAny;
+
 List<Integer> list = Arrays.asList(1, 2, 2, 1);
 List<Object> result = mapIfAny(list::stream, i -> i == 1, i -> "A")
         .collect(Collectors.toList()); // [A, A, A, A]
@@ -177,6 +210,8 @@ List<Object> result = mapIfAny(list::stream, i -> i == 1, i -> "A")
 Apply a map function to all the elements of the stream if any of them match the predicate and don't match the other predicates
 
 ```
+import static es.rubenjgarcia.commons.functional.FlowStream.mapIfAny;
+
 List<Integer> list = Arrays.asList(1, 1, 1, 1);
 List<Object> result = mapIfAny(list::stream, i -> i == 2, i -> "A")
         .elseIfAnyMap(i -> i == 1, i -> "B")
@@ -184,6 +219,8 @@ List<Object> result = mapIfAny(list::stream, i -> i == 2, i -> "A")
 ```
 
 ```
+import static es.rubenjgarcia.commons.functional.FlowStream.mapIfAny;
+
 List<Integer> list = Arrays.asList(1, 2, 3, 1);
 List<Object> result = mapIfAny(list::stream, i -> i == 2, i -> "A")
         .elseIfAnyMap(i -> i == 4, i -> "B")
@@ -194,6 +231,8 @@ List<Object> result = mapIfAny(list::stream, i -> i == 2, i -> "A")
 You can combine any of the flows
 
 ```
+import static es.rubenjgarcia.commons.functional.FlowStream.mapIf;
+
 List<Integer> list = Arrays.asList(1, 2, 1, 1);
 List<Object> result = mapIf(list::stream, i -> i == 2, i -> "A")
         .elseIfAnyMap(i -> i == 1, i -> "B")
@@ -206,8 +245,21 @@ List<Object> result = mapIf(list::stream, i -> i == 2, i -> "A")
 You can use `rethrowFunction`, `rethrowConsumer` or `rethrowPredicate` to deal with [Function](https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html), [Consumer](https://docs.oracle.com/javase/8/docs/api/java/util/function/Consumer.html) or [Predicate](https://docs.oracle.com/javase/8/docs/api/java/util/function/Predicate.html) that throws any [Exception](https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html) 
 
 ```
-Stream.of("a", "b")
-    .map(rethrowFunction(s -> new String(s.getBytes(), "Foo")))
+import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowFunction;
+
+Stream.of("a", "b").map(rethrowFunction(s -> new String(s.getBytes(), "Foo")));
+```
+
+```
+import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowConsumer;
+
+Stream.of("a", "b").forEach(rethrowConsumer(s -> new String(s.getBytes(), "Foo")));
+```
+
+```
+import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowPredicate;
+
+Stream.of("a", "b").filter(rethrowPredicate(s -> new String(s.getBytes(), "Foo") == null));
 ```
 
 # Installation

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -43,6 +44,10 @@ public interface StreamUtils {
         return (sa.isParallel() || sb.isParallel())
                 ? StreamSupport.stream(split, true)
                 : StreamSupport.stream(split, false);
+    }
+
+    static <A> Stream<Tuple2<Long, A>> zipWithIndex(Stream<A> sa) {
+        return zip(LongStream.iterate(0, i -> i + 1).boxed(), sa);
     }
 
     static <A, B> Tuple2<Stream<A>, Stream<B>> unzip(Stream<Tuple2<A, B>> stream) {
