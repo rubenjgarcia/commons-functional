@@ -3,12 +3,9 @@ package es.rubenjgarcia.commons.functional.tests;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.stream.Stream;
 
-import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowConsumer;
-import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowFunction;
-import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowPredicate;
+import static es.rubenjgarcia.commons.functional.FunctionalExceptions.*;
 import static es.rubenjgarcia.commons.functional.tests.TestHelper.assertThrows;
 
 @SuppressWarnings("InjectedReferences")
@@ -32,6 +29,13 @@ public class FunctionalExceptionsTestCase {
     public void testRethrowPredicate() {
         assertThrows(UnsupportedEncodingException.class, () -> {
             Stream.of("a", "b").filter(rethrowPredicate(p -> new String(p.getBytes(), "Foo") == null)).count();
+        });
+    }
+
+    @Test
+    public void testRethrowSupplier() {
+        assertThrows(UnsupportedEncodingException.class, () -> {
+            rethrowSupplier(() -> new String("a".getBytes(), "Foo")).get();
         });
     }
 }

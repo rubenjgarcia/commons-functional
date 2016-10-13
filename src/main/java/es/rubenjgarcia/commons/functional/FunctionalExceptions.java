@@ -3,6 +3,7 @@ package es.rubenjgarcia.commons.functional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public interface FunctionalExceptions {
 
@@ -38,6 +39,17 @@ public interface FunctionalExceptions {
         };
     }
 
+    static <T> Supplier<T> rethrowSupplier(Supplier_WithExceptions<T> supplier) {
+        return () -> {
+            try {
+                return supplier.get();
+            } catch (Exception exception) {
+                throwAsUnchecked(exception);
+                return null;
+            }
+        };
+    }
+
     static <E extends Throwable> void throwAsUnchecked(Exception exception) throws E {
         throw (E) exception;
     }
@@ -53,7 +65,12 @@ public interface FunctionalExceptions {
     }
 
     @FunctionalInterface
-    public interface Predicate_WithExceptions<T> {
+    interface Predicate_WithExceptions<T> {
         boolean test(T t) throws Exception;
+    }
+
+    @FunctionalInterface
+    interface Supplier_WithExceptions<T> {
+        T get() throws Exception;
     }
 }

@@ -262,6 +262,12 @@ import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowPre
 Stream.of("a", "b").filter(rethrowPredicate(s -> new String(s.getBytes(), "Foo") == null));
 ```
 
+```
+import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowSupplier;
+
+rethrowPredicate(() -> new String(s.getBytes(), "Foo"));
+```
+
 # Installation
 
 Just add to your pom.xml
