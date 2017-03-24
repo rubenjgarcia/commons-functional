@@ -242,12 +242,20 @@ List<Object> result = mapIf(list::stream, i -> i == 2, i -> "A")
 
 ## Exceptions 
 
-You can use `rethrowFunction`, `rethrowConsumer` or `rethrowPredicate` to deal with [Function](https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html), [Consumer](https://docs.oracle.com/javase/8/docs/api/java/util/function/Consumer.html) or [Predicate](https://docs.oracle.com/javase/8/docs/api/java/util/function/Predicate.html) that throws any [Exception](https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html) 
+You can use `rethrowFunction`, `rethrowConsumer` or `rethrowPredicate` to deal with [Function](https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html), [BiFunction](https://docs.oracle.com/javase/8/docs/api/java/util/function/BiFunction.html), [Consumer](https://docs.oracle.com/javase/8/docs/api/java/util/function/Consumer.html), [BiConsumer](https://docs.oracle.com/javase/8/docs/api/java/util/function/BiConsumer.html), [Predicate](https://docs.oracle.com/javase/8/docs/api/java/util/function/Predicate.html) or [BiPredicate](https://docs.oracle.com/javase/8/docs/api/java/util/function/BiPredicate.html) that throws any cheked [Exception](https://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html) 
 
 ```
 import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowFunction;
 
 Stream.of("a", "b").map(rethrowFunction(s -> new String(s.getBytes(), "Foo")));
+```
+
+```
+import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowBiFunction;
+
+Map<String, String> map = new HashMap<>();
+map.put("a", "b");
+map.replaceAll(rethrowBiFunction((k, v) -> new String(k.getBytes(), "Foo")))
 ```
 
 ```
@@ -257,9 +265,24 @@ Stream.of("a", "b").forEach(rethrowConsumer(s -> new String(s.getBytes(), "Foo")
 ```
 
 ```
+import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowBiConsumer;
+
+Map<String, String> map = new HashMap<>();
+map.put("a", "b");
+map.forEach(rethrowBiConsumer((k, v) -> new String(k.getBytes(), "Foo")));
+```
+
+```
 import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowPredicate;
 
 Stream.of("a", "b").filter(rethrowPredicate(s -> new String(s.getBytes(), "Foo") == null));
+```
+
+```
+import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowBiPredicate;
+
+BiPredicate<String, String> predicate = rethrowBiPredicate((s, e) -> new String(s.getBytes(), e).isEmpty());
+predicate.test("a", "Foo");
 ```
 
 ```
@@ -276,6 +299,6 @@ Just add to your pom.xml
 <dependency>
     <groupId>es.rubenjgarcia</groupId>
     <artifactId>commons-functional</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.0</version>
 </dependency>
 ```

@@ -7,8 +7,9 @@ public class TestHelper {
         try {
             block.run();
         } catch (Throwable ex) {
-            if (exceptionClass.isInstance(ex))
+            if (exceptionClass.isInstance(ex)) {
                 return ex;
+            }
         }
 
         fail("Expected exception not thrown");
